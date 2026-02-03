@@ -1,0 +1,594 @@
+<!-- CLIENTE.HTML - Loja para Clientes -->
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loja Pro - Cardápio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * { font-family: 'Inter', sans-serif; }
+        
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            min-height: 100vh;
+        }
+        
+        .glass {
+            background: rgba(30, 41, 59, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .product-card {
+            transition: all 0.3s ease;
+        }
+        
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        }
+        
+        .quantity-btn {
+            transition: all 0.2s;
+        }
+        
+        .quantity-btn:active {
+            transform: scale(0.95);
+        }
+        
+        .cart-item {
+            animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        .floating-cart {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 100;
+            animation: bounce 2s infinite;
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .category-pill {
+            transition: all 0.3s;
+        }
+        
+        .category-pill.active {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            color: white;
+        }
+        
+        .success-animation {
+            animation: successPop 0.5s ease;
+        }
+        
+        @keyframes successPop {
+            0% { transform: scale(0.8); opacity: 0; }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body class="text-slate-100 pb-24">
+
+    <!-- Header -->
+    <header class="sticky top-0 z-50 glass border-b border-slate-700/50">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                    <i class="fas fa-store text-xl text-white"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-white">Loja Pro</h1>
+                    <p class="text-xs text-slate-400">Cardápio Digital</p>
+                </div>
+            </div>
+            <button onclick="toggleCart()" class="relative w-12 h-12 bg-slate-800 rounded-full flex items-center justify-center hover:bg-slate-700 transition-colors">
+                <i class="fas fa-shopping-cart text-lg"></i>
+                <span id="cartCount" class="absolute -top-1 -right-1 w-6 h-6 bg-red-500 rounded-full text-xs flex items-center justify-center font-bold hidden">0</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <div class="max-w-7xl mx-auto px-4 py-8">
+        <div class="glass rounded-2xl p-6 mb-8 bg-gradient-to-r from-indigo-600/20 to-purple-600/20 border-indigo-500/30">
+            <h2 class="text-3xl font-bold mb-2">Bem-vindo! 👋</h2>
+            <p class="text-slate-300">Faça seu pedido de forma rápida e fácil. Entregamos na sua porta!</p>
+        </div>
+
+        <!-- Busca -->
+        <div class="relative mb-6">
+            <input type="text" id="searchInput" onkeyup="searchProducts()" placeholder="Buscar produtos..." 
+                class="w-full glass rounded-xl pl-12 pr-4 py-4 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-lg"></i>
+        </div>
+
+        <!-- Categorias -->
+        <div class="flex gap-3 overflow-x-auto pb-4 mb-6 scrollbar-hide">
+            <button onclick="filterCategory('all')" class="category-pill active px-6 py-2 rounded-full bg-slate-800 text-slate-300 whitespace-nowrap font-medium">
+                Todos
+            </button>
+            <button onclick="filterCategory('food')" class="category-pill px-6 py-2 rounded-full bg-slate-800 text-slate-300 whitespace-nowrap font-medium">
+                🍔 Lanches
+            </button>
+            <button onclick="filterCategory('drink')" class="category-pill px-6 py-2 rounded-full bg-slate-800 text-slate-300 whitespace-nowrap font-medium">
+                🥤 Bebidas
+            </button>
+            <button onclick="filterCategory('combo')" class="category-pill px-6 py-2 rounded-full bg-slate-800 text-slate-300 whitespace-nowrap font-medium">
+                🎁 Combos
+            </button>
+        </div>
+
+        <!-- Produtos -->
+        <div id="productsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Preenchido via JS -->
+        </div>
+    </div>
+
+    <!-- Modal Carrinho -->
+    <div id="cartModal" class="fixed inset-0 bg-black/80 z-50 hidden flex justify-end">
+        <div class="w-full max-w-md bg-slate-900 h-full flex flex-col border-l border-slate-700 transform transition-transform duration-300 translate-x-full" id="cartPanel">
+            
+            <!-- Header do Carrinho -->
+            <div class="glass p-6 border-b border-slate-700 flex justify-between items-center">
+                <h2 class="text-xl font-bold flex items-center gap-2">
+                    <i class="fas fa-shopping-cart text-indigo-400"></i>
+                    Seu Pedido
+                </h2>
+                <button onclick="toggleCart()" class="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center hover:bg-slate-700 transition-colors">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <!-- Itens do Carrinho -->
+            <div class="flex-1 overflow-y-auto p-6" id="cartItems">
+                <div class="text-center text-slate-500 mt-12">
+                    <i class="fas fa-shopping-basket text-6xl mb-4 opacity-30"></i>
+                    <p>Seu carrinho está vazio</p>
+                    <p class="text-sm mt-2">Adicione itens para fazer seu pedido</p>
+                </div>
+            </div>
+
+            <!-- Footer do Carrinho -->
+            <div class="glass p-6 border-t border-slate-700 space-y-4">
+                <div class="flex justify-between text-lg">
+                    <span class="text-slate-400">Subtotal</span>
+                    <span class="font-semibold" id="cartSubtotal">R$ 0,00</span>
+                </div>
+                <div class="flex justify-between text-xl font-bold">
+                    <span>Total</span>
+                    <span class="text-green-400" id="cartTotal">R$ 0,00</span>
+                </div>
+                <button onclick="openCheckout()" id="checkoutBtn" disabled 
+                    class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-4 rounded-xl transition-all transform hover:scale-[1.02] flex items-center justify-center gap-2">
+                    <span>Finalizar Pedido</span>
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Checkout -->
+    <div id="checkoutModal" class="fixed inset-0 bg-black/90 z-[60] hidden items-center justify-center p-4">
+        <div class="glass w-full max-w-lg rounded-2xl p-6 max-h-[90vh] overflow-y-auto">
+            <h2 class="text-2xl font-bold mb-6 flex items-center gap-2">
+                <i class="fas fa-check-circle text-green-400"></i>
+                Finalizar Pedido
+            </h2>
+
+            <form id="checkoutForm" onsubmit="submitOrder(event)" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-2">Nome Completo</label>
+                    <input type="text" id="customerName" required 
+                        class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500 transition-colors"
+                        placeholder="Seu nome">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-2">WhatsApp</label>
+                    <input type="tel" id="customerPhone" required 
+                        class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500 transition-colors"
+                        placeholder="5511999999999">
+                    <p class="text-xs text-slate-500 mt-1">Formato: 55 + DDD + Número</p>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-2">Endereço de Entrega</label>
+                    <textarea id="customerAddress" required rows="3"
+                        class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500 transition-colors"
+                        placeholder="Rua, número, bairro, referência..."></textarea>
+                </div>
+
+                <div class="bg-slate-800/50 p-4 rounded-xl">
+                    <p class="text-sm text-slate-400 mb-2">Resumo do Pedido:</p>
+                    <div id="checkoutSummary" class="space-y-2 text-sm">
+                        <!-- Preenchido via JS -->
+                    </div>
+                    <div class="border-t border-slate-700 mt-3 pt-3 flex justify-between font-bold text-lg">
+                        <span>Total</span>
+                        <span class="text-green-400" id="checkoutTotal">R$ 0,00</span>
+                    </div>
+                </div>
+
+                <div class="flex gap-3 pt-4">
+                    <button type="button" onclick="closeCheckout()" 
+                        class="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-3 rounded-xl transition-colors">
+                        Voltar
+                    </button>
+                    <button type="submit" 
+                        class="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl transition-colors font-semibold flex items-center justify-center gap-2">
+                        <i class="fab fa-whatsapp"></i>
+                        Enviar Pedido
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Sucesso -->
+    <div id="successModal" class="fixed inset-0 bg-black/90 z-[70] hidden items-center justify-center p-4">
+        <div class="glass w-full max-w-md rounded-2xl p-8 text-center success-animation">
+            <div class="w-24 h-24 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                <i class="fas fa-check text-4xl text-white"></i>
+            </div>
+            <h2 class="text-2xl font-bold mb-2">Pedido Enviado!</h2>
+            <p class="text-slate-400 mb-6">Seu pedido foi recebido e em breve será processado.</p>
+            <div class="bg-slate-800/50 p-4 rounded-xl mb-6">
+                <p class="text-sm text-slate-400">Número do Pedido</p>
+                <p class="text-2xl font-bold text-indigo-400" id="successOrderId">#0000</p>
+            </div>
+            <button onclick="closeSuccess()" 
+                class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl transition-colors font-semibold">
+                Fazer Novo Pedido
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Dados (simulando Firebase)
+        let products = [
+            { id: 1, name: 'Hambúrguer Artesanal', description: 'Pão brioche, carne 180g, queijo cheddar, bacon e molho especial', price: 35.00, category: 'food', image: '🍔', stock: 50 },
+            { id: 2, name: 'Batata Frita Grande', description: 'Porção grande de batatas fritas crocantes com sal', price: 18.00, category: 'food', image: '🍟', stock: 30 },
+            { id: 3, name: 'Refrigerante 2L', description: 'Coca-Cola, Guaraná ou Sprite', price: 12.00, category: 'drink', image: '🥤', stock: 100 },
+            { id: 4, name: 'Combo Família', description: '4 hambúrgueres + 2 batatas grandes + 2 refrigerantes 2L', price: 75.00, category: 'combo', image: '🎁', stock: 20 },
+            { id: 5, name: 'Cheeseburger', description: 'Pão brioche, carne 150g, queijo cheddar duplo', price: 28.00, category: 'food', image: '🍔', stock: 40 },
+            { id: 6, name: 'Milkshake 500ml', description: 'Chocolate, Morango ou Baunilha', price: 15.00, category: 'drink', image: '🥤', stock: 25 }
+        ];
+
+        let cart = {};
+        let currentCategory = 'all';
+
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', function() {
+            renderProducts();
+        });
+
+        function renderProducts() {
+            const grid = document.getElementById('productsGrid');
+            grid.innerHTML = '';
+
+            const filtered = currentCategory === 'all' 
+                ? products 
+                : products.filter(p => p.category === currentCategory);
+
+            filtered.forEach(product => {
+                if (product.stock <= 0) return; // Não mostrar esgotados
+
+                const quantity = cart[product.id] || 0;
+                
+                const card = document.createElement('div');
+                card.className = 'product-card glass rounded-2xl overflow-hidden';
+                card.innerHTML = `
+                    <div class="h-48 bg-gradient-to-br from-slate-800 to-slate-700 flex items-center justify-center text-6xl relative">
+                        ${product.image}
+                        ${product.stock < 10 ? '<span class="absolute top-4 right-4 bg-red-500 text-white text-xs px-3 py-1 rounded-full">Últimas unidades</span>' : ''}
+                    </div>
+                    <div class="p-6">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="text-lg font-bold text-white">${product.name}</h3>
+                            <span class="text-xl font-bold text-green-400">R$ ${product.price.toFixed(2)}</span>
+                        </div>
+                        <p class="text-slate-400 text-sm mb-4 line-clamp-2">${product.description}</p>
+                        
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-slate-500">${product.stock} disponíveis</span>
+                            
+                            ${quantity === 0 ? `
+                                <button onclick="addToCart(${product.id})" 
+                                    class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-full font-semibold transition-colors flex items-center gap-2">
+                                    <i class="fas fa-plus text-sm"></i>
+                                    Adicionar
+                                </button>
+                            ` : `
+                                <div class="flex items-center gap-3 bg-slate-800 rounded-full p-1">
+                                    <button onclick="updateQuantity(${product.id}, -1)" 
+                                        class="quantity-btn w-8 h-8 rounded-full bg-slate-700 hover:bg-slate-600 flex items-center justify-center text-white">
+                                        <i class="fas fa-minus text-xs"></i>
+                                    </button>
+                                    <span class="w-8 text-center font-bold text-white">${quantity}</span>
+                                    <button onclick="updateQuantity(${product.id}, 1)" 
+                                        class="quantity-btn w-8 h-8 rounded-full bg-indigo-600 hover:bg-indigo-700 flex items-center justify-center text-white">
+                                        <i class="fas fa-plus text-xs"></i>
+                                    </button>
+                                </div>
+                            `}
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function filterCategory(category) {
+            currentCategory = category;
+            
+            // Atualizar UI
+            document.querySelectorAll('.category-pill').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            renderProducts();
+        }
+
+        function searchProducts() {
+            const term = document.getElementById('searchInput').value.toLowerCase();
+            const cards = document.querySelectorAll('.product-card');
+            
+            cards.forEach(card => {
+                const text = card.textContent.toLowerCase();
+                card.style.display = text.includes(term) ? '' : 'none';
+            });
+        }
+
+        function addToCart(productId) {
+            const product = products.find(p => p.id === productId);
+            if (!product || product.stock <= 0) return;
+            
+            cart[productId] = 1;
+            updateCartUI();
+            renderProducts(); // Re-render para mostrar controles de quantidade
+        }
+
+        function updateQuantity(productId, change) {
+            const product = products.find(p => p.id === productId);
+            if (!product) return;
+
+            const currentQty = cart[productId] || 0;
+            const newQty = currentQty + change;
+
+            if (newQty <= 0) {
+                delete cart[productId];
+            } else if (newQty <= product.stock) {
+                cart[productId] = newQty;
+            } else {
+                alert('Quantidade máxima disponível atingida!');
+                return;
+            }
+
+            updateCartUI();
+            renderProducts();
+        }
+
+        function updateCartUI() {
+            const count = Object.values(cart).reduce((a, b) => a + b, 0);
+            const badge = document.getElementById('cartCount');
+            
+            if (count > 0) {
+                badge.textContent = count;
+                badge.classList.remove('hidden');
+                document.getElementById('checkoutBtn').disabled = false;
+            } else {
+                badge.classList.add('hidden');
+                document.getElementById('checkoutBtn').disabled = true;
+            }
+
+            renderCartItems();
+        }
+
+        function renderCartItems() {
+            const container = document.getElementById('cartItems');
+            const itemIds = Object.keys(cart);
+            
+            if (itemIds.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center text-slate-500 mt-12">
+                        <i class="fas fa-shopping-basket text-6xl mb-4 opacity-30"></i>
+                        <p>Seu carrinho está vazio</p>
+                        <p class="text-sm mt-2">Adicione itens para fazer seu pedido</p>
+                    </div>
+                `;
+                updateCartTotals();
+                return;
+            }
+
+            container.innerHTML = '';
+            itemIds.forEach(id => {
+                const product = products.find(p => p.id === parseInt(id));
+                const quantity = cart[id];
+                
+                const div = document.createElement('div');
+                div.className = 'cart-item glass p-4 rounded-xl mb-3 flex items-center gap-4';
+                div.innerHTML = `
+                    <div class="w-16 h-16 bg-slate-800 rounded-lg flex items-center justify-center text-2xl">
+                        ${product.image}
+                    </div>
+                    <div class="flex-1">
+                        <h4 class="font-semibold text-white">${product.name}</h4>
+                        <p class="text-green-400">R$ ${product.price.toFixed(2)}</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="updateQuantity(${product.id}, -1)" class="w-8 h-8 rounded-full bg-slate-700 hover:bg-slate-600 flex items-center justify-center">
+                            <i class="fas fa-minus text-xs"></i>
+                        </button>
+                        <span class="w-8 text-center font-bold">${quantity}</span>
+                        <button onclick="updateQuantity(${product.id}, 1)" class="w-8 h-8 rounded-full bg-indigo-600 hover:bg-indigo-700 flex items-center justify-center">
+                            <i class="fas fa-plus text-xs"></i>
+                        </button>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+
+            updateCartTotals();
+        }
+
+        function updateCartTotals() {
+            let subtotal = 0;
+            Object.entries(cart).forEach(([id, qty]) => {
+                const product = products.find(p => p.id === parseInt(id));
+                if (product) subtotal += product.price * qty;
+            });
+
+            document.getElementById('cartSubtotal').textContent = `R$ ${subtotal.toFixed(2)}`;
+            document.getElementById('cartTotal').textContent = `R$ ${subtotal.toFixed(2)}`;
+        }
+
+        function toggleCart() {
+            const modal = document.getElementById('cartModal');
+            const panel = document.getElementById('cartPanel');
+            
+            if (modal.classList.contains('hidden')) {
+                modal.classList.remove('hidden');
+                setTimeout(() => {
+                    panel.classList.remove('translate-x-full');
+                }, 10);
+            } else {
+                panel.classList.add('translate-x-full');
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                }, 300);
+            }
+        }
+
+        function openCheckout() {
+            toggleCart();
+            
+            // Preencher resumo
+            const summary = document.getElementById('checkoutSummary');
+            summary.innerHTML = '';
+            let total = 0;
+
+            Object.entries(cart).forEach(([id, qty]) => {
+                const product = products.find(p => p.id === parseInt(id));
+                const itemTotal = product.price * qty;
+                total += itemTotal;
+                
+                summary.innerHTML += `
+                    <div class="flex justify-between">
+                        <span class="text-slate-300">${qty}x ${product.name}</span>
+                        <span class="text-white">R$ ${itemTotal.toFixed(2)}</span>
+                    </div>
+                `;
+            });
+
+            document.getElementById('checkoutTotal').textContent = `R$ ${total.toFixed(2)}`;
+            document.getElementById('checkoutModal').classList.remove('hidden');
+            document.getElementById('checkoutModal').classList.add('flex');
+        }
+
+        function closeCheckout() {
+            document.getElementById('checkoutModal').classList.add('hidden');
+            document.getElementById('checkoutModal').classList.remove('flex');
+        }
+
+        function submitOrder(e) {
+            e.preventDefault();
+
+            const name = document.getElementById('customerName').value;
+            const phone = document.getElementById('customerPhone').value;
+            const address = document.getElementById('customerAddress').value;
+
+            // Montar itens do pedido
+            const items = Object.entries(cart).map(([id, qty]) => {
+                const product = products.find(p => p.id === parseInt(id));
+                return {
+                    productId: product.id,
+                    name: product.name,
+                    quantity: qty,
+                    price: product.price
+                };
+            });
+
+            const total = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+            // Criar pedido
+            const order = {
+                id: Date.now(),
+                customerName: name,
+                customerPhone: phone,
+                customerAddress: address,
+                items: items,
+                total: total,
+                date: new Date().toISOString(),
+                status: 'pending'
+            };
+
+            // Salvar no localStorage (simulando envio para admin)
+            let orders = JSON.parse(localStorage.getItem('pendingOrders') || '[]');
+            orders.push(order);
+            localStorage.setItem('pendingOrders', JSON.stringify(orders));
+
+            // Mostrar sucesso
+            document.getElementById('successOrderId').textContent = '#' + order.id.toString().slice(-4);
+            document.getElementById('checkoutModal').classList.add('hidden');
+            document.getElementById('successModal').classList.remove('hidden');
+            document.getElementById('successModal').classList.add('flex');
+
+            // Limpar carrinho
+            cart = {};
+            updateCartUI();
+        }
+
+        function closeSuccess() {
+            document.getElementById('successModal').classList.add('hidden');
+            document.getElementById('successModal').classList.remove('flex');
+            renderProducts();
+        }
+
+        // Fechar modais ao clicar fora
+        window.onclick = function(event) {
+            if (event.target.id === 'cartModal') {
+                toggleCart();
+            }
+            if (event.target.id === 'checkoutModal') {
+                closeCheckout();
+            }
+        }
+    </script>
+</body>
+</html>
